@@ -2,55 +2,27 @@
 import states from "../data/states.json";
 
 export function checkingUniqueEmailPhone(data) {
-  let duplicatedEmailAndPhone = [];
   let i = 1;
+
   do {
-    data.forEach((elem, ind) => {
-      if (elem[2].toLowerCase() === data[i][2].toLowerCase() && i !== ind) {
-        duplicatedEmailAndPhone.push({
-          letterWithDuplicatedEmail: i,
-          clone: ind,
-        });
-        // increment because of we need the first duplicated data
-        i++;
+    for (let y = 1; y < data.length; y++) {
+      if (
+        data[y][2].value.toLowerCase() === data[i][2].value.toLowerCase() &&
+        i !== y
+      ) {
+        data[i][10] = { value: y, isValid: true };
+        data[i][2] = { ...data[i][2], isValid: false };
+        break;
       }
-      if (elem[1] === data[i][1] && i !== ind) {
-        duplicatedEmailAndPhone.push({
-          letterWithDuplicatedPhone: i,
-          clone: ind,
-        });
-        // increment because of we need the first duplicated data
-        i++;
+      if (data[y][1].value === data[i][1].value && i !== y) {
+        data[i][10] = { value: y, isValid: true };
+        data[i][1] = { ...data[i][1], isValid: false };
+        break;
       }
-    });
+      data[i][10] = { value: null, isValid: true };
+    }
     i++;
   } while (i < data.length);
-  if (duplicatedEmailAndPhone.length > 0) {
-    return duplicatedEmailAndPhone;
-  }
-  return ["Duplicated data not found"];
-}
-
-export function selectDuplicatedEmailAndPhone(
-  index,
-  duplicatedEmailsAndPhones,
-  indexOfLetter
-) {
-  return (
-    (index === 1 || index === 2) &&
-    duplicatedEmailsAndPhones.length > 0 &&
-    duplicatedEmailsAndPhones.some(
-      (elem) =>
-        (indexOfLetter === elem.letterWithDuplicatedPhone && index === 1) ||
-        (indexOfLetter === elem.letterWithDuplicatedEmail && index === 2)
-    )
-  );
-}
-
-export function decimalYearlyIncome(element, index) {
-  if (index === 5) {
-    return Math.round(Number(element) * 100) / 100;
-  }
 }
 
 export function deleteSpacing(data) {
@@ -62,7 +34,7 @@ export function deleteSpacing(data) {
       if (arrColumnName.length === 2) {
         arrColumnName.splice(1, 0, " ");
       }
-      return arrColumnName.join("");
+      return { value: arrColumnName.join(""), isValid: true };
     });
   });
 }
@@ -72,7 +44,7 @@ export function checkNameOfSate(data) {
     if (ind === 0) {
       return;
     }
-    const arrOfStates = line[7].split("|");
+    const arrOfStates = line[7].value.split("|");
     let foundSates = [];
     arrOfStates.forEach((inputState) => {
       const stateFromList = states.find(
@@ -81,21 +53,35 @@ export function checkNameOfSate(data) {
             .toLowerCase()
             .split("")
             .filter((letter) => letter !== " ")
-            .join("") === inputState.toLowerCase().split("")
-            .filter((letter) => letter !== " ")
-            .join("") ||
+            .join("") ===
+            inputState
+              .toLowerCase()
+              .split("")
+              .filter((letter) => letter !== " ")
+              .join("") ||
           state.abbreviation.toLowerCase() === inputState.toLowerCase()
       );
-      stateFromList
-        ? foundSates.push(stateFromList)
-        : foundSates.push("State not found");
+      if (stateFromList) {
+        foundSates.push(stateFromList);
+      }
+      if (!stateFromList) {
+        foundSates.push(inputState);
+        return (line[7] = { ...line[7], isValid: false });
+      }
     });
-    const arrOfShortStates = foundSates.map(
-      (state) => state.abbreviation || state
-    );
-    foundSates.length > 0
-      ? data[ind].splice(7, 1, arrOfShortStates.join(", "))
-      : data[ind].splice(7, 1, "State not found");
+    let arrOfShortStates;
+    if (foundSates) {
+      arrOfShortStates = foundSates.map(
+        (state) => state && (state.abbreviation || state)
+      );
+    }
+    if (arrOfShortStates.length > 0) {
+      return (data[ind][7] = {
+        ...data[ind][7],
+        value: arrOfShortStates.join(", "),
+      });
+    }
+    data[ind][7] = { value: null, isValid: false };
   });
 }
 
@@ -104,14 +90,14 @@ export function modificationPhone(data) {
     if (ind === 0) {
       return;
     }
-    const arrWithNumbers = line[1].split("");
+    const arrWithNumbers = line[1].value.split("");
     if (arrWithNumbers.length === 11 && arrWithNumbers[0] === "1") {
-      const modifiedElement = "+" + line[1];
-      data[ind].splice(1, 1, modifiedElement);
+      const modifiedElement = "+" + line[1].value;
+      data[ind].splice(1, 1, { value: modifiedElement, isValid: true });
     }
     if (arrWithNumbers.length === 10 && arrWithNumbers[0] !== "+") {
-      const modifiedElement = "+1" + line[1];
-      data[ind].splice(1, 1, modifiedElement);
+      const modifiedElement = "+1" + line[1].value;
+      data[ind].splice(1, 1, { value: modifiedElement, isValid: true });
     }
   });
 }
@@ -122,18 +108,25 @@ export function modificationHasChildren(data) {
       return;
     }
     if (line[6] === "") {
-      data[ind].splice(6, 1, "FALSE");
+      data[ind].splice(6, 1, { value: "FALSE", isValid: true });
     }
   });
 }
 
 export function validationColumnsNames(data) {
   if (
-    data[0].some((elem) => elem.toLowerCase() === "full name") &&
-    data[0].some((elem) => elem.toLowerCase() === "phone") &&
-    data[0].some((elem) => elem.toLowerCase() === "email")
+    data[0].some(({ value }) => value.toLowerCase() === "full name") &&
+    data[0].some(({ value }) => value.toLowerCase() === "phone") &&
+    data[0].some(({ value }) => value.toLowerCase() === "email")
   ) {
     return true;
   }
   return false;
+}
+
+export function checkAndModify(data) {
+  checkNameOfSate(data);
+  modificationPhone(data);
+  modificationHasChildren(data);
+  checkingUniqueEmailPhone(data);
 }

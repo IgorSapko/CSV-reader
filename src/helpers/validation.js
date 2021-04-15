@@ -1,168 +1,139 @@
-export function totalValidate(
-  element,
-  index,
-  elem,
-  duplicatedEmailsAndPhones,
-  indexOfLetter
-) {
-  return (
-    validationAge(element, index) ||
-    validationYearlyIncome(element, index) ||
-    validationExperience(element, index, elem) ||
-    validationExpirationDate(element, index) ||
-    validationPhone(element, index) ||
-    validationHasChildren(element, index) ||
-    validationLicenceNumber(element, index) ||
-    selectDuplicatedEmailAndPhone(
-      index,
-      duplicatedEmailsAndPhones,
-      indexOfLetter
-    )
-  );
-}
+import moment from "moment";
 
-export function selectDuplicatedEmailAndPhone(
-  index,
-  duplicatedEmailsAndPhones,
-  indexOfLetter
-) {
-  return (
-    (index === 1 || index === 2) &&
-    duplicatedEmailsAndPhones.length > 0 &&
-    duplicatedEmailsAndPhones.some(
-      (elem) =>
-        (indexOfLetter === elem.letterWithDuplicatedPhone && index === 1) ||
-        (indexOfLetter === elem.letterWithDuplicatedEmail && index === 2)
-    )
-  );
-}
+export function totalValidate(element, index, elem) {
+    validationAge(element, index);
+    validationYearlyIncome(element, index);
+    validationExperience(element, index, elem);
+    validationExpirationDate(element, index);
+    validationPhone(element, index);
+    validationHasChildren(element, index);
+    validationLicenceNumber(element, index)
+ };
 
-export function validationAge(element, index) {
-  if (index === 3) {
-    const checkPositiveValue = !Boolean(Number(element) > 0);
-    const isAgeInteger = !Number.isInteger(Number(element));
-    const checkingMinimalAge = !Boolean(Number(element) - 21 > 0);
-    return isAgeInteger || checkingMinimalAge || checkPositiveValue;
-  }
-}
-
-export function validationYearlyIncome(element, index) {
-  if (index === 5) {
-    const checkPositiveValue = !Boolean(Number(element) > 0);
-    const checkMaxValue = !Boolean(Number(element) < 1000000);
-    return checkMaxValue || checkPositiveValue;
-  }
-}
-
-export function validationExperience(element, index, elem) {
-  if (index === 4) {
-    const checkPositiveValue = !Boolean(Number(element) > 0);
-    const compareWithAge = !Boolean(Number(element) <= Number(elem[index - 1]));
-    return compareWithAge || checkPositiveValue;
-  }
-}
-
-export function validationExpirationDate(element, index) {
-  if (index === 8) {
-    const arrWithcurrentDate = new Date().toLocaleDateString().split(".");
-    const currentDate = new Date();
-    let arrWithExpirationDate = element.split("-");
-    let slashSeparate;
-    if (arrWithExpirationDate.length < 3) {
-      arrWithExpirationDate = element.split("/");
-      slashSeparate = true;
+export function validationAge(data) {
+  return data.forEach((line) => {
+    const checkPositiveValue = Number(line[3].value) > 0;
+    const isAgeInteger = Number.isInteger(Number(line[3].value));
+    const checkingMinimalAge = Number(line[3].value) - 21 > 0;
+    if (!(isAgeInteger && checkingMinimalAge && checkPositiveValue)) {
+      return (line[3] = { ...line[3], isValid: false });
     }
-    if (arrWithExpirationDate.length !== 3) {
+  });
+}
+
+export function validationYearlyIncome(data) {
+  return data.forEach((line) => {
+    const decimalValue = Math.round(Number(line[5].value) * 100) / 100;
+    const checkPositiveValue = Number(line[5].value) > 0;
+    const checkMaxValue = Number(line[5].value) < 1000000;
+    if (!(checkMaxValue && checkPositiveValue && decimalValue)) {
+      return (line[5] = {
+        ...line[5],
+        isValid: false,
+      });
+    }
+    return (line[5] = {
+      value: decimalValue,
+      isValid: true,
+    });
+  });
+}
+
+export function validationExperience(data) {
+  return data.forEach((line) => {
+    const checkPositiveValue = Number(line[4].value) > 0;
+    const compareWithAge = Number(line[4].value) <= Number(line[3].value);
+    if (!(compareWithAge && checkPositiveValue)) {
+      return (line[4] = { ...line[4], isValid: false });
+    }
+  });
+}
+
+export function validationExpirationDate(data) {
+  moment.defaultFormat1 = "MM/DD/YYYY";
+  moment.defaultFormat2 = "YYYY-MM-DD";
+  return data.forEach((line, index) => {
+    if (index !== 0) {
+      const momentObj1 = moment(`${line[8].value}`, moment.defaultFormat1);
+      const momentObj2 = moment(`${line[8].value}`, moment.defaultFormat2);
+              if (
+        (momentObj1._isValid &&
+          momentObj1._pf.unusedInput.length === 0 &&
+          momentObj1 >= moment() &&
+          line[8].value.split("/")[0].length === 2 &&
+          line[8].value.split("/")[1].length === 2) ||
+        (momentObj2._isValid &&
+          momentObj2._pf.unusedInput.length === 0 &&
+          momentObj2 >= moment() &&
+          line[8].value.split("-")[2].length === 2 &&
+          line[8].value.split("-")[1].length === 2)
+      ) {
+        return;
+      }
+      line[8] = { ...line[8], isValid: false };
+    }
+  });
+}
+
+export function validationPhone(data) {
+  const checkingForNumbers = (arrWithNumbers) => {
+    if (arrWithNumbers.slice(1).every((numb) => !isNaN(Number(numb)))) {
       return true;
     }
-    let expirationDate;
-    slashSeparate
-      ? (expirationDate = new Date(
-          arrWithExpirationDate[2],
-          arrWithExpirationDate[0],
-          arrWithExpirationDate[1]
-        ))
-      : (expirationDate = new Date(
-          arrWithExpirationDate[0],
-          arrWithExpirationDate[1],
-          arrWithExpirationDate[2]
-        ));
-    let checkingYear;
-    let checkingTotalDate;
-    if (
-      arrWithExpirationDate[2].length === 4 &&
-      arrWithExpirationDate[0].length === 2 &&
-      arrWithExpirationDate[1].length === 2 &&
-      slashSeparate
-    ) {
-      checkingYear = !Boolean(
-        Number(arrWithExpirationDate[2]) >= Number(arrWithcurrentDate[2])
-      );
-      checkingTotalDate = !Boolean(currentDate < expirationDate);
-    } else if (
-      arrWithExpirationDate[0].length === 4 &&
-      arrWithExpirationDate[2].length === 2 &&
-      arrWithExpirationDate[1].length === 2 &&
-      !slashSeparate
-    ) {
-      checkingYear = !Boolean(
-        Number(arrWithExpirationDate[0]) >= Number(arrWithcurrentDate[2])
-      );
-      checkingTotalDate = !Boolean(currentDate < expirationDate);
-    } else {
-      checkingYear = true;
-    }
-    return checkingYear || checkingTotalDate;
-  }
-}
-
-export function validationPhone(element, index) {
-  const checkingForNumbers = (arrWithNumbers) => {
-    if (
-      arrWithNumbers.slice(1).every((numb) => !isNaN(Number(numb))) &&
-      arrWithNumbers.length >= 10
-    ) {
-      return false;
-    }
-    return true;
+    return false;
   };
-  if (index === 1) {
-    const arrWithNumbers = element.split("");
-    if (
-      arrWithNumbers.length === 12 &&
-      arrWithNumbers[0] === "+" &&
-      arrWithNumbers[1] === "1"
-    ) {
-      checkingForNumbers(arrWithNumbers);
-      return false || checkingForNumbers(arrWithNumbers);
+  return data.forEach((line, index) => {
+    if (index !== 0) {
+      const arrWithNumbers = line[1].value.split("");
+      if (
+        arrWithNumbers.length === 12 &&
+        arrWithNumbers[0] === "+" &&
+        arrWithNumbers[1] === "1" &&
+        checkingForNumbers(arrWithNumbers)
+      ) {
+        return;
+      }
+      if (
+        arrWithNumbers.length === 11 &&
+        arrWithNumbers[0] === "1" &&
+        checkingForNumbers(arrWithNumbers)
+      ) {
+        return;
+      }
+      if (
+        arrWithNumbers.length === 10 &&
+        arrWithNumbers[0] !== "+" &&
+        checkingForNumbers(arrWithNumbers)
+      ) {
+        return;
+      }
+      return (line[1] = { ...line[1], isValid: false });
     }
-    if (arrWithNumbers.length === 11 && arrWithNumbers[0] === "1") {
-      checkingForNumbers(arrWithNumbers);
-      return false || checkingForNumbers(arrWithNumbers);
-    }
-    if (arrWithNumbers.length === 10 && arrWithNumbers[0] !== "+") {
-      checkingForNumbers(arrWithNumbers);
-      return false || checkingForNumbers(arrWithNumbers);
-    }
-    return true;
-  }
+  });
 }
 
-export function validationHasChildren(element, index) {
-  if (index === 6) {
-    if (element === "TRUE" || element === "FALSE" || element === "") {
-      return false;
+export function validationHasChildren(data) {
+  return data.forEach((line, index) => {
+    if (index !== 0) {
+      if (line[6].value === "TRUE" || line[6].value === "FALSE") {
+        return;
+      }
+      if (line[6].value === "") {
+        return (line[6] = { value: "FALSE", isValid: true });
+      }
+      return (line[6] = { ...line[6], isValid: false });
     }
-    return true;
-  }
+  });
 }
 
-export function validationLicenceNumber(element, index) {
-  if (index === 9) {
-    let reg = new RegExp("[^a-zA-Z0-9]+");
-    if (element.length === 6 && !reg.test(element)) {
-      return false;
+export function validationLicenceNumber(data) {
+  return data.forEach((line, index) => {
+    if (index !== 0) {
+      let reg = new RegExp("[^a-zA-Z0-9]+");
+      if (line[9].value.length === 6 && !reg.test(line[9].value)) {
+        return;
+      }
+      return (line[9] = { ...line[9], isValid: false });
     }
-    return true;
-  }
+  });
 }

@@ -1,9 +1,10 @@
 {
-  "name": "test-task",
+  "name": "csv-reader",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
     "csv-react-table": "^2.0.7",
+    "moment": "^2.29.1",
     "papaparse": "^5.3.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
@@ -15,7 +16,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "netlify deploy -p"
   },
   "eslintConfig": {
     "extends": [

@@ -1,19 +1,11 @@
 import React, { Component } from "react";
 import { CSVReader } from "react-papaparse";
 import { Table, Thead, Tbody, Tr, Th, Td } from "react-super-responsive-table";
+import { totalValidate } from "../../helpers/validation";
 import {
-  totalValidate,
-  validationLicenceNumber,
-  selectDuplicatedEmailAndPhone,
-} from "../../helpers/validation";
-import {
-  checkingUniqueEmailPhone,
-  decimalYearlyIncome,
-  checkNameOfSate,
   deleteSpacing,
-  modificationPhone,
-  modificationHasChildren,
   validationColumnsNames,
+  checkAndModify,
 } from "../../helpers/helperFunctions";
 import "react-super-responsive-table/dist/SuperResponsiveTableStyle.css";
 import styles from "./CsvReader.module.css";
@@ -23,19 +15,8 @@ const buttonRef = React.createRef();
 export default class CSVReader1 extends Component {
   state = {
     dataFromCSVFile: null,
-    duplicatedEmailsAndPhones: [],
     isValidFile: true,
   };
-
-  componentDidUpdate(prevProps, prevState) {
-    this.state.duplicatedEmailsAndPhones.length === 0 &&
-      this.state.isValidFile &&
-      this.setState((state) => ({
-        duplicatedEmailsAndPhones: [
-          ...checkingUniqueEmailPhone(state.dataFromCSVFile),
-        ],
-      }));
-  }
 
   handleOpenDialog = (e) => {
     if (buttonRef.current) {
@@ -51,9 +32,8 @@ export default class CSVReader1 extends Component {
       const dataWithoutSpacing = deleteSpacing(data);
       !validationColumnsNames(dataWithoutSpacing) &&
         this.setState({ isValidFile: false });
-      checkNameOfSate(dataWithoutSpacing);
-      modificationPhone(dataWithoutSpacing);
-      modificationHasChildren(dataWithoutSpacing);
+      checkAndModify(dataWithoutSpacing);
+      totalValidate(dataWithoutSpacing);
       this.setState({ dataFromCSVFile: [...dataWithoutSpacing] });
     }
   };
@@ -63,11 +43,7 @@ export default class CSVReader1 extends Component {
   };
 
   render() {
-    const {
-      dataFromCSVFile,
-      duplicatedEmailsAndPhones,
-      isValidFile,
-    } = this.state;
+    const { dataFromCSVFile, isValidFile } = this.state;
     return (
       <>
         <h2 className={styles.title}>Welcome to CSV-file reader</h2>
@@ -102,7 +78,7 @@ export default class CSVReader1 extends Component {
                 <Tr className={styles.columnsNames}>
                   <Th key="ID">ID</Th>
                   {dataFromCSVFile[0].map((elem) => (
-                    <Th key={elem}>{elem}</Th>
+                    <Th key={elem.value}>{elem.value}</Th>
                   ))}
                   <Th key=" Duplicate with"> Duplicate with</Th>
                 </Tr>
@@ -118,67 +94,24 @@ export default class CSVReader1 extends Component {
                         if (index === 0) {
                           return [
                             <Td key={indexOfLetter}>{indexOfLetter}</Td>,
-                            <Td key={indexOfLetter - 1}>{element}</Td>,
-                          ];
-                        }
-                        if (
-                          duplicatedEmailsAndPhones.length > 0 &&
-                          index === elem.length - 1
-                        ) {
-                          const dataOfColumnDuplicateWith = duplicatedEmailsAndPhones
-                            .map((pair) => {
-                              if (
-                                pair.letterWithDuplicatedEmail ===
-                                  indexOfLetter ||
-                                pair.letterWithDuplicatedPhone === indexOfLetter
-                              ) {
-                                return [
-                                  <Td
-                                    key={indexOfLetter}
-                                    className={
-                                      selectDuplicatedEmailAndPhone(
-                                        index,
-                                        duplicatedEmailsAndPhones,
-                                        indexOfLetter
-                                      ) ||
-                                      validationLicenceNumber(element, index)
-                                        ? styles.selected
-                                        : null
-                                    }
-                                  >
-                                    {element}
-                                  </Td>,
-                                  <Td key={indexOfLetter}>{pair.clone}</Td>,
-                                ];
+                            <Td
+                              key={indexOfLetter - 1}
+                              className={
+                                !element.isValid ? styles.selected : null
                               }
-                              return null;
-                            })
-                            .filter((elem) => elem);
-                          if (dataOfColumnDuplicateWith.length > 0) {
-                            return dataOfColumnDuplicateWith;
-                          } else {
-                            return [
-                              <Td key={indexOfLetter}>{element}</Td>,
-                              <Td key={indexOfLetter - 2}></Td>,
-                            ];
-                          }
+                            >
+                              {element.value}
+                            </Td>,
+                          ];
                         }
                         return (
                           <Td
                             key={indexOfLetter}
                             className={
-                              totalValidate(
-                                element,
-                                index,
-                                elem,
-                                duplicatedEmailsAndPhones,
-                                indexOfLetter
-                              )
-                                ? styles.selected
-                                : null
+                              !element.isValid ? styles.selected : null
                             }
                           >
-                            {decimalYearlyIncome(element, index) || element}
+                            {element.value}
                           </Td>
                         );
                       })}
