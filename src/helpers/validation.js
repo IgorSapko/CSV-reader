@@ -1,14 +1,14 @@
 import moment from "moment";
 
 export function totalValidate(element, index, elem) {
-    validationAge(element, index);
-    validationYearlyIncome(element, index);
-    validationExperience(element, index, elem);
-    validationExpirationDate(element, index);
-    validationPhone(element, index);
-    validationHasChildren(element, index);
-    validationLicenceNumber(element, index)
- };
+  validationAge(element, index);
+  validationYearlyIncome(element, index);
+  validationExperience(element, index, elem);
+  validationExpirationDate(element, index);
+  validationPhone(element, index);
+  validationHasChildren(element, index);
+  validationLicenceNumber(element, index);
+}
 
 export function validationAge(data) {
   return data.forEach((line) => {
@@ -56,7 +56,7 @@ export function validationExpirationDate(data) {
     if (index !== 0) {
       const momentObj1 = moment(`${line[8].value}`, moment.defaultFormat1);
       const momentObj2 = moment(`${line[8].value}`, moment.defaultFormat2);
-              if (
+      if (
         (momentObj1._isValid &&
           momentObj1._pf.unusedInput.length === 0 &&
           momentObj1 >= moment() &&
@@ -130,7 +130,18 @@ export function validationLicenceNumber(data) {
   return data.forEach((line, index) => {
     if (index !== 0) {
       let reg = new RegExp("[^a-zA-Z0-9]+");
-      if (line[9].value.length === 6 && !reg.test(line[9].value)) {
+      let isPositiveValue = true;
+      if (!isNaN(Number(line[9].value))) {
+        if (Number(line[9].value) >= 0) {
+          isPositiveValue = true;
+        }
+        isPositiveValue = false;
+      }
+      if (
+        line[9].value.length === 6 &&
+        !reg.test(line[9].value) &&
+        isPositiveValue
+      ) {
         return;
       }
       return (line[9] = { ...line[9], isValid: false });
